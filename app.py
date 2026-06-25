@@ -140,7 +140,7 @@ if not roster.empty:
     # Render interactive spreadsheet table
     st.dataframe(
         roster[['Player', 'Role', 'Team', 'Salary', 'BPM', 'USG_Pct', 'Value_Index']].sort_values(by="Value_Index", ascending=False),
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
     
@@ -153,7 +153,7 @@ if not roster.empty:
     )
     fig.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 else:
     st.info("💡 Select configuration assets from the left sidebar panel to begin rendering analytical canvas vectors.")
 
