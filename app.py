@@ -525,6 +525,7 @@ with st.sidebar:
         "Optimization Blueprint",
         options=["Star-Heavy Build", "Balanced Synergy Build", "Moneyball Yield Build", "Manual Override"]
     )
+    
 
     st.divider()
     st.markdown('<div class="section-label">Scenario Controls</div>', unsafe_allow_html=True)
@@ -1304,3 +1305,7 @@ st.caption(
     "BPM and Usage% are deterministic analytical proxies for demonstration only · "
     "Not official NBA cap, CBA, or contract advice."
 )
+if st.sidebar.button("Reset Full Scenario", width="stretch"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
