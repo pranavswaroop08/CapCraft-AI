@@ -322,6 +322,45 @@ def load_market_data():
         df = df[["Player", "Team", "Salary"]].copy()
         df["Salary"] = pd.to_numeric(df["Salary"], errors="coerce")
         df = df.dropna(subset=["Player", "Team", "Salary"])
+
+        # Normalize team names: full names, historical franchises, and relocations -> 3-letter codes.
+        # Covers every value found in the public CSV, including defunct/relocated teams and junk entries.
+        TEAM_NORM = {
+            # Current franchises
+            "Atlanta Hawks": "ATL", "Boston Celtics": "BOS", "Brooklyn Nets": "BKN",
+            "Charlotte Hornets": "CHA", "Charlotte Bobcats": "CHA",
+            "Chicago Bulls": "CHI", "Cleveland Cavaliers": "CLE",
+            "Dallas Mavericks": "DAL", "Denver Nuggets": "DEN", "Detroit Pistons": "DET",
+            "Golden State Warriors": "GSW", "Houston Rockets": "HOU", "Indiana Pacers": "IND",
+            "LA Clippers": "LAC", "Los Angeles Clippers": "LAC",
+            "LA Lakers": "LAL", "Los Angeles Lakers": "LAL",
+            "Memphis Grizzlies": "MEM", "Miami Heat": "MIA", "Milwaukee Bucks": "MIL",
+            "Minnesota Timberwolves": "MIN", "New Orleans Pelicans": "NOP",
+            "New York Knicks": "NYK", "Oklahoma City Thunder": "OKC", "Orlando Magic": "ORL",
+            "Philadelphia 76ers": "PHI", "Philadelphia Sixers": "PHI",
+            "Phoenix Suns": "PHX", "Portland Trail Blazers": "POR",
+            "Sacramento Kings": "SAC", "San Antonio Spurs": "SAS",
+            "Toronto Raptors": "TOR", "Utah Jazz": "UTA", "Washington Wizards": "WAS",
+            # Historical / relocated franchises
+            "New Jersey Nets": "BKN",
+            "Seattle SuperSonics": "OKC",
+            "Vancouver Grizzlies": "MEM",
+            "New Orleans Hornets": "NOP",
+            "NO/Oklahoma City Hornets": "NOP",
+            "NO/Oklahoma City\r\n Hornets": "NOP",
+            # Already-correct abbreviations (passthrough)
+            "ATL": "ATL", "BOS": "BOS", "BKN": "BKN", "NJN": "BKN",
+            "CHA": "CHA", "CHI": "CHI", "CLE": "CLE", "DAL": "DAL",
+            "DEN": "DEN", "DET": "DET", "GSW": "GSW", "HOU": "HOU",
+            "IND": "IND", "LAC": "LAC", "LAL": "LAL", "MEM": "MEM",
+            "MIA": "MIA", "MIL": "MIL", "MIN": "MIN", "NOP": "NOP",
+            "NOH": "NOP", "SEA": "OKC", "NYK": "NYK", "OKC": "OKC",
+            "ORL": "ORL", "PHI": "PHI", "PHX": "PHX", "POR": "POR",
+            "SAC": "SAC", "SAS": "SAS", "TOR": "TOR", "UTA": "UTA", "WAS": "WAS",
+        }
+        df["Team"] = df["Team"].str.strip().map(TEAM_NORM)
+        # Drop rows whose team didn't match any known franchise (overseas clubs, nulls, junk)
+        df = df.dropna(subset=["Team"])
         df = df.drop_duplicates(subset=["Player"], keep="first")
         if df["Salary"].max() > 1_000_000:
             df["Salary"] = df["Salary"] / 1_000_000
