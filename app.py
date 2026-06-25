@@ -88,24 +88,48 @@ st.markdown("##### *AQX Sports Analytics Hackathon Entry | Advanced Decision-Sup
 st.write("---")
 
 # ==========================================
-# 🗂️ 4. SIDEBAR INPUT ENGINE
+# 🗂️ 4. SIDEBAR INPUT & TEAM SELECTION
 # ==========================================
 st.sidebar.header("🛠️ Roster Engineering Panel")
-st.sidebar.markdown("Construct a **5-man lineup** to analyze system fit, fiscal thresholds, and asset yields.")
 
-all_available_players = df_market['Player'].tolist()
+# Target Franchise Selector Input Box
+unique_teams = sorted(df_market['Team'].dropna().unique().tolist())
+selected_team = st.sidebar.selectbox("🎯 Target Front Office Franchise:", options=unique_teams, index=unique_teams.index("BOS") if "BOS" in unique_teams else 0)
 
-# Define robust presets to showcase optimal performance out-of-the-box
-ideal_presets = ["Nikola Jokic", "Shai Gilgeous-Alexander", "Alex Caruso", "Jalen Williams", "Sam Hauser"]
-default_selection = [p for p in ideal_presets if p in all_available_players]
+# Filter global pool to separate team players from market trade targets
+team_pool = df_market[df_market['Team'] == selected_team]
+market_pool = df_market[df_market['Team'] != selected_team]
 
-selected_players = st.sidebar.multiselect(
-    "Select Lineup Targets:",
-    options=all_available_players,
-    default=default_selection if len(default_selection) == 5 else all_available_players[:5]
+st.sidebar.markdown("---")
+st.sidebar.subheader("🤖 Lineup Optimization Engine")
+st.sidebar.write("Select an AI-generated algorithmic strategy blueprint below:")
+
+# Algorithmic Generation Logic
+# Variant 1: Star Heavy (Top BPM items from pool)
+star_lineup = pd.concat([team_pool.head(2), market_pool.head(3)]).head(5)
+# Variant 2: Balanced Synergy (Filtered usage target structures)
+balanced_lineup = df_market[df_market['USG_Pct'].between(15, 25)].head(5)
+# Variant 3: Moneyball Value Yield (Top Value Index metrics)
+moneyball_lineup = df_market.sort_values(by="Value_Index", ascending=False).head(5)
+
+strategy_option = st.sidebar.radio(
+    "Choose Strategy Archetype Blueprint:",
+    options=["Star-Heavy Build", "Balanced Synergy Build", "Moneyball Yield Build", "Manual Override Custom Selection"]
 )
 
-roster = df_market[df_market['Player'].isin(selected_players)]
+# Roster extraction selector logic
+if strategy_option == "Star-Heavy Build":
+    roster_players = star_lineup['Player'].tolist()
+elif strategy_option == "Balanced Synergy Build":
+    roster_players = balanced_lineup['Player'].tolist()
+elif strategy_option == "Moneyball Yield Build":
+    roster_players = moneyball_lineup['Player'].tolist()
+else:
+    # Manual selection fallback array
+    all_players = df_market['Player'].tolist()
+    roster_players = st.sidebar.multiselect("Select Lineup Targets:", options=all_players, default=all_players[:5])
+
+roster = df_market[df_market['Player'].isin(roster_players)]
 
 # ==========================================
 # 📐 5. AGGREGATED METRICS PROCESSING
@@ -135,9 +159,9 @@ st.write("---")
 # ==========================================
 # 📋 6. DATA VISUALIZATION SEGMENT
 # ==========================================
-st.subheader("📋 Lineup Structural Breakdown")
+st.subheader(f"📋 Lineup Structural Breakdown: {strategy_option} for {selected_team}")
 if not roster.empty:
-    # Render interactive spreadsheet table
+    # Render interactive spreadsheet table using updated stretch width specs
     st.dataframe(
         roster[['Player', 'Role', 'Team', 'Salary', 'BPM', 'USG_Pct', 'Value_Index']].sort_values(by="Value_Index", ascending=False),
         width='stretch',
@@ -145,7 +169,7 @@ if not roster.empty:
     )
     
     st.write("")
-    # Render interactive quantitative layout chart
+    # Render interactive quantitative layout chart using updated width specs
     fig = px.scatter(
         roster, x="Salary", y="BPM", text="Player", size="USG_Pct", color="Role",
         title="Asset Allocation Map: Operational Output vs. Financial Cost (Bubble Size = Usage %)",
@@ -153,7 +177,7 @@ if not roster.empty:
     )
     fig.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, width='stretch')
 else:
     st.info("💡 Select configuration assets from the left sidebar panel to begin rendering analytical canvas vectors.")
 
